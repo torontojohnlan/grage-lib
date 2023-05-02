@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "module": "none",
+    "target": "es5",
+    "lib": ["dom"]
+  },
+  "exclude":  [
+    "../src/**"
+  ]
+}
