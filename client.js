@@ -20,12 +20,12 @@ var LiveState;
     LiveState[LiveState["UNKNOWN"] = 2] = "UNKNOWN";
 })(LiveState || (LiveState = {}));
 // @ts-ignore
-function makeClient(host = undefined) {
+function makeClient(host = undefined, onTerminate = undefined) {
     let protocol = 'wss';
-    if (!host && window) {
-        if (window.location.protocol !== 'https:')
+    if (globalThis.location) {
+        if (location.protocol !== 'https:')
             protocol = 'ws';
-        host = `${window.location.hostname}:${window.location.port}`;
+        host !== null && host !== void 0 ? host : (host = `${location.hostname}:${location.port}`);
     }
     const ws = new websocket_1.w3cwebsocket(`${protocol}://${host}/ws`);
     //list of listeners for when the websocket connects
@@ -59,7 +59,7 @@ function makeClient(host = undefined) {
             /**
              * shows debug messages if set to true
              */
-            debug: window && (location.hostname === "localhost" || location.hostname === "127.0.0.1"),
+            debug: globalThis.location && (location.hostname === "localhost" || location.hostname === "127.0.0.1"),
             /**
              * how long to wait before reloading the page
              * this prevents exploding if errors occur at page load time
@@ -121,13 +121,23 @@ function makeClient(host = undefined) {
         /**
          * Terminates the connection and reloads the app.
          */
-        terminate() {
+        terminate(reason = undefined) {
             //close ws if not already
-            if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+            if (ws.readyState === websocket_1.w3cwebsocket.OPEN || ws.readyState === websocket_1.w3cwebsocket.CONNECTING) {
                 ws.close();
             }
-            //reload page in 5 seconds
-            setTimeout(() => window.location.reload(false), grage.options.reloadTime);
+            // User error handler
+            if (onTerminate) {
+                return onTerminate(reason);
+            }
+            if (globalThis.location) {
+                //reload page in 5 seconds
+                setTimeout(() => window.location.reload(false), grage.options.reloadTime);
+            }
+            else {
+                console.log('terminated websocket');
+                globalThis.process.exit(-1);
+            }
         },
         /**
          * Request a device to ping
@@ -318,7 +328,7 @@ function makeClient(host = undefined) {
         console.error('[Websocket error]', error);
         //if debug, stop, else try reload page
         if (!grage.options.debug)
-            grage.terminate();
+            grage.terminate(error);
         else {
             console.log('[Debug mode] frozen');
             debugger;
