@@ -43,11 +43,13 @@ type Channel = {
 
 // @ts-ignore
 export default function makeClient(host?:string = undefined) {
-    let protocol = 'wss';
-    if (window.location.protocol !== 'https:')
-        protocol = 'ws';
+    if(!host) {
+        let protocol = 'wss';
+        if (window.location.protocol !== 'https:')
+            protocol = 'ws';
 
-    host ??= `${protocol}://${window.location.hostname}:${window.location.port}/ws`;
+        host = `${protocol}://${window.location.hostname}:${window.location.port}/ws`;
+    }
 
     const ws = new w3cwebsocket(host);
 

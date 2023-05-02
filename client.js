@@ -21,10 +21,12 @@ var LiveState;
 })(LiveState || (LiveState = {}));
 // @ts-ignore
 function makeClient(host = undefined) {
-    let protocol = 'wss';
-    if (window.location.protocol !== 'https:')
-        protocol = 'ws';
-    host !== null && host !== void 0 ? host : (host = `${protocol}://${window.location.hostname}:${window.location.port}/ws`);
+    if (!host) {
+        let protocol = 'wss';
+        if (window.location.protocol !== 'https:')
+            protocol = 'ws';
+        host = `${protocol}://${window.location.hostname}:${window.location.port}/ws`;
+    }
     const ws = new websocket_1.w3cwebsocket(host);
     //list of listeners for when the websocket connects
     let openListeners = [];
