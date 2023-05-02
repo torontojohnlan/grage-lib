@@ -21,13 +21,13 @@ var LiveState;
 })(LiveState || (LiveState = {}));
 // @ts-ignore
 function makeClient(host = undefined) {
-    if (!host) {
-        let protocol = 'wss';
+    let protocol = 'wss';
+    if (!host && window) {
         if (window.location.protocol !== 'https:')
             protocol = 'ws';
-        host = `${protocol}://${window.location.hostname}:${window.location.port}/ws`;
+        host = `${window.location.hostname}:${window.location.port}`;
     }
-    const ws = new websocket_1.w3cwebsocket(host);
+    const ws = new websocket_1.w3cwebsocket(`${protocol}://${host}/ws`);
     //list of listeners for when the websocket connects
     let openListeners = [];
     const channels = {};
@@ -59,7 +59,7 @@ function makeClient(host = undefined) {
             /**
              * shows debug messages if set to true
              */
-            debug: location.hostname === "localhost" || location.hostname === "127.0.0.1",
+            debug: window && (location.hostname === "localhost" || location.hostname === "127.0.0.1"),
             /**
              * how long to wait before reloading the page
              * this prevents exploding if errors occur at page load time
