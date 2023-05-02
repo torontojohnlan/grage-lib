@@ -37,7 +37,7 @@ export type StateData={
 }
 
 // @ts-ignore
-window.esp8266 = {
+export default {
     LogicLevel,
     PinMode,
     InterruptMode,

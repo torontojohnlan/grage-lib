@@ -1,5 +1,5 @@
 // @ts-ignore
-window.util = {
+export default {
     timeDifference(current:Date, previous:Date) {
         const msPerMinute = 60 * 1000;
         const msPerHour = msPerMinute * 60;
