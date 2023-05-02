@@ -42,7 +42,7 @@ type Channel = {
 };
 
 // @ts-ignore
-export default function makeGrage(host?:string = undefined) {
+export default function makeClient(host?:string = undefined) {
     let protocol = 'wss';
     if (window.location.protocol !== 'https:')
         protocol = 'ws';

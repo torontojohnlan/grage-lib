@@ -20,7 +20,7 @@ var LiveState;
     LiveState[LiveState["UNKNOWN"] = 2] = "UNKNOWN";
 })(LiveState || (LiveState = {}));
 // @ts-ignore
-function makeGrage(host = undefined) {
+function makeClient(host = undefined) {
     let protocol = 'wss';
     if (window.location.protocol !== 'https:')
         protocol = 'ws';
@@ -328,5 +328,5 @@ function makeGrage(host = undefined) {
     ws.onclose = grage.terminate;
     return grage;
 }
-exports.default = makeGrage;
+exports.default = makeClient;
 //# sourceMappingURL=client.js.map
