@@ -41,7 +41,11 @@ type Channel = {
 
 // @ts-ignore
 export default function makeGrage(host = undefined) {
-    host ??=  `wss://${window.location.hostname}/ws`;
+    let protocol = 'wss';
+    if (window.location.protocol !== 'https:')
+        protocol = 'ws';
+
+    host ??= `${protocol}://${window.location.hostname}:${window.location.port}/ws`;
 
     const ws = new WebSocket(host);
 
