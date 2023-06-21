@@ -1,12 +1,15 @@
 import {
     ChannelMessage,
     ConnectMessage,
+    isMetadataMessage,
     DataMessage,
     Message, Ping,
     RequestPing
-} from "./lib";
+} from "./lib.js";
 
-import {w3cwebsocket} from 'websocket';
+// import { w3cwebsocket } from 'websocket'
+import pkg from 'websocket/index.js';
+const { w3cwebsocket } = pkg;
 
 function isRequestPing(m: Message): m is RequestPing {
     return m.type === 'rping';
@@ -43,7 +46,7 @@ type Channel = {
 };
 
 // @ts-ignore
-export default function makeClient(host:string = undefined, onTerminate:TerminateListener = undefined) {
+export default function makeClient(host:string = undefined, onTerminate:TerminateListener = undefined) { //returns a grage object
     let protocol = 'wss';
 
     if(globalThis.location) {
@@ -52,7 +55,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
 
         host ??= `${location.hostname}:${location.port}`;
     }
-
+    debug(`${protocol}://${host}/ws`);
     const ws = new w3cwebsocket(`${protocol}://${host}/ws`);
 
     //list of listeners for when the websocket connects
@@ -82,7 +85,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
      * @param args the parameters to console.log
      */
     function debug(...args: any) {
-        if (grage.options.debug)
+        // if (grage.options.debug)
             console.log(...args);
     }
 
@@ -100,7 +103,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
             reloadTime: 5 * 1000,
 
             /**
-             * how long to wait before actively checking if a device is alive
+             * how long to wait before actively checking if a device is alive //JohnLan. To be exact, this is to check if a channel, rather than a device, is alive
              */
             aliveTimeout: 10 * 1000,
 
@@ -114,6 +117,11 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
              * how long to wait before retrying another ping request
              */
             pingRetry: 30 * 1000,
+
+            /**
+             * how long the door has been consecutively open before an alert is sent (for debug purpose, set to 5 min)
+             */
+            maxOpenTimeAllowed: 5 * 60 * 1000,
         },
         /**
          * Registers a listener which is called upon connection to server
@@ -160,6 +168,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
          */
         terminate(reason:any = undefined) {
             //close ws if not already
+            console.log("grage channel closing handler")
             if (ws.readyState === w3cwebsocket.OPEN || ws.readyState === w3cwebsocket.CONNECTING) {
                 ws.close();
             }
@@ -173,7 +182,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
             {
                 //reload page in 5 seconds
                 setTimeout(
-                    () => window.location.reload(false),
+                    () => window.location.reload(),
                     grage.options.reloadTime
                 );
             }
@@ -350,14 +359,14 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
             const m = JSON.parse(evt.data as string) as Message;
             debug('[recv]', m);
             //ignore messages from other browsers, ignore non subscribed messages
-            if (isChannelMessage(m) && m.fromDevice && channels.hasOwnProperty(m.id)) {
+            if (isChannelMessage(m) && m.fromDevice && channels.hasOwnProperty(m.id)) { ////data || ping || rping
                 //since this device just sent a message,
                 //it must be alive
                 assertAlive(m.id);
 
                 const channel = channels[m.id];
 
-                if (isDataMessage(m)) {
+                if (isDataMessage(m)) { //data 
                     //send to every listener in the proper channel
                     for (const listener of channel.dataListeners) {
                         listener(m.data);
@@ -371,7 +380,10 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
                     //then clear list of once listeners
                     channel.dataListenersOnce = [];
                 }
-            } else {
+            } else if (isMetadataMessage(m)) { //metadata msg //added by John
+                //connect(m.id);
+                debug('no handler for metadata yet')
+            }else {
                 console.warn('[Unknown message type]', m);
             }
         } catch (error) {
