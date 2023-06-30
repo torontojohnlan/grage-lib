@@ -1,5 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 var PinMode;
 (function (PinMode) {
     PinMode[PinMode["INPUT"] = 0] = "INPUT";
@@ -35,7 +33,7 @@ var Pin;
     Pin[Pin["_A0"] = 17] = "_A0";
 })(Pin || (Pin = {}));
 // @ts-ignore
-exports.default = {
+export default {
     LogicLevel,
     PinMode,
     InterruptMode,

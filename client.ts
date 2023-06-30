@@ -121,7 +121,8 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
             /**
              * how long the door has been consecutively open before an alert is sent (for debug purpose, set to 5 min)
              */
-            maxOpenTimeAllowed: 5 * 60 * 1000,
+            maxOpenTimeAllowed: 5 * 60 * 1000,  // 5 min,
+            alertEmailInterval: 60 * 60 * 1000, // 1 hour
         },
         /**
          * Registers a listener which is called upon connection to server

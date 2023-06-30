@@ -1,6 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const websocket_1 = require("websocket");
+import { isMetadataMessage } from "./lib.js";
+// import { w3cwebsocket } from 'websocket'
+import pkg from 'websocket/index.js';
+const { w3cwebsocket } = pkg;
 function isRequestPing(m) {
     return m.type === 'rping';
 }
@@ -20,14 +21,15 @@ var LiveState;
     LiveState[LiveState["UNKNOWN"] = 2] = "UNKNOWN";
 })(LiveState || (LiveState = {}));
 // @ts-ignore
-function makeClient(host = undefined, onTerminate = undefined) {
+export default function makeClient(host = undefined, onTerminate = undefined) {
     let protocol = 'wss';
     if (globalThis.location) {
         if (location.protocol !== 'https:')
             protocol = 'ws';
         host !== null && host !== void 0 ? host : (host = `${location.hostname}:${location.port}`);
     }
-    const ws = new websocket_1.w3cwebsocket(`${protocol}://${host}/ws`);
+    debug(`${protocol}://${host}/ws`);
+    const ws = new w3cwebsocket(`${protocol}://${host}/ws`);
     //list of listeners for when the websocket connects
     let openListeners = [];
     const channels = {};
@@ -51,8 +53,8 @@ function makeClient(host = undefined, onTerminate = undefined) {
      * @param args the parameters to console.log
      */
     function debug(...args) {
-        if (grage.options.debug)
-            console.log(...args);
+        // if (grage.options.debug)
+        console.log(...args);
     }
     const grage = {
         options: {
@@ -66,7 +68,7 @@ function makeClient(host = undefined, onTerminate = undefined) {
              */
             reloadTime: 5 * 1000,
             /**
-             * how long to wait before actively checking if a device is alive
+             * how long to wait before actively checking if a device is alive //JohnLan. To be exact, this is to check if a channel, rather than a device, is alive
              */
             aliveTimeout: 10 * 1000,
             /**
@@ -78,6 +80,11 @@ function makeClient(host = undefined, onTerminate = undefined) {
              * how long to wait before retrying another ping request
              */
             pingRetry: 30 * 1000,
+            /**
+             * how long the door has been consecutively open before an alert is sent (for debug purpose, set to 5 min)
+             */
+            maxOpenTimeAllowed: 5 * 60 * 1000,
+            alertEmailInterval: 60 * 60 * 1000, // 1 hour
         },
         /**
          * Registers a listener which is called upon connection to server
@@ -123,7 +130,8 @@ function makeClient(host = undefined, onTerminate = undefined) {
          */
         terminate(reason = undefined) {
             //close ws if not already
-            if (ws.readyState === websocket_1.w3cwebsocket.OPEN || ws.readyState === websocket_1.w3cwebsocket.CONNECTING) {
+            console.log("grage channel closing handler");
+            if (ws.readyState === w3cwebsocket.OPEN || ws.readyState === w3cwebsocket.CONNECTING) {
                 ws.close();
             }
             // User error handler
@@ -132,7 +140,7 @@ function makeClient(host = undefined, onTerminate = undefined) {
             }
             if (globalThis.location) {
                 //reload page in 5 seconds
-                setTimeout(() => window.location.reload(false), grage.options.reloadTime);
+                setTimeout(() => window.location.reload(), grage.options.reloadTime);
             }
             else {
                 console.log('terminated websocket');
@@ -290,12 +298,12 @@ function makeClient(host = undefined, onTerminate = undefined) {
             const m = JSON.parse(evt.data);
             debug('[recv]', m);
             //ignore messages from other browsers, ignore non subscribed messages
-            if (isChannelMessage(m) && m.fromDevice && channels.hasOwnProperty(m.id)) {
+            if (isChannelMessage(m) && m.fromDevice && channels.hasOwnProperty(m.id)) { ////data || ping || rping
                 //since this device just sent a message,
                 //it must be alive
                 assertAlive(m.id);
                 const channel = channels[m.id];
-                if (isDataMessage(m)) {
+                if (isDataMessage(m)) { //data 
                     //send to every listener in the proper channel
                     for (const listener of channel.dataListeners) {
                         listener(m.data);
@@ -307,6 +315,10 @@ function makeClient(host = undefined, onTerminate = undefined) {
                     //then clear list of once listeners
                     channel.dataListenersOnce = [];
                 }
+            }
+            else if (isMetadataMessage(m)) { //metadata msg //added by John
+                //connect(m.id);
+                debug('no handler for metadata yet');
             }
             else {
                 console.warn('[Unknown message type]', m);
@@ -340,5 +352,4 @@ function makeClient(host = undefined, onTerminate = undefined) {
     ws.onclose = grage.terminate;
     return grage;
 }
-exports.default = makeClient;
 //# sourceMappingURL=client.js.map
