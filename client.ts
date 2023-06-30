@@ -119,9 +119,9 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
             pingRetry: 30 * 1000,
 
             /**
-             * how long the door has been consecutively open before an alert is sent (for debug purpose, set to 5 min)
+             * how long the door has been consecutively open before an alert is sent 
              */
-            maxOpenTimeAllowed: 5 * 60 * 1000,  // 5 min,
+            maxOpenTimeAllowed: 60 * 60 * 1000,  // 1 hr,
             alertEmailInterval: 60 * 60 * 1000, // 1 hour
         },
         /**
