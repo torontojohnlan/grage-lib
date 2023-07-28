@@ -1,7 +1,12 @@
 import { isMetadataMessage } from "./lib.js";
-// import { w3cwebsocket } from 'websocket'
-import pkg from 'websocket/index.js';
-const { w3cwebsocket } = pkg;
+import { w3cwebsocket } from 'websocket/index.js';
+/* console.logs the parameters if debug mode is on
+ * @param args the parameters to console.log
+*/
+export function showDebugMsg(...args) {
+    if ((process.env.DEBUG === 'true'))
+        console.log(...args);
+}
 function isRequestPing(m) {
     return m.type === 'rping';
 }
@@ -28,7 +33,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
             protocol = 'ws';
         host !== null && host !== void 0 ? host : (host = `${location.hostname}:${location.port}`);
     }
-    debug(`${protocol}://${host}/ws`);
+    showDebugMsg(`${protocol}://${host}/ws`);
     const ws = new w3cwebsocket(`${protocol}://${host}/ws`);
     //list of listeners for when the websocket connects
     let openListeners = [];
@@ -39,7 +44,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
      */
     function wsSend(m) {
         try {
-            debug('[Send]', m);
+            showDebugMsg('[Send]', m);
             ws.send(JSON.stringify(m));
             return false;
         }
@@ -48,20 +53,8 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
             return error;
         }
     }
-    /**
-     * console.logs the parameters if debug mode is on
-     * @param args the parameters to console.log
-     */
-    function debug(...args) {
-        // if (grage.options.debug)
-        console.log(...args);
-    }
     const grage = {
         options: {
-            /**
-             * shows debug messages if set to true
-             */
-            debug: globalThis.location && (location.hostname === "localhost" || location.hostname === "127.0.0.1"),
             /**
              * how long to wait before reloading the page
              * this prevents exploding if errors occur at page load time
@@ -81,9 +74,9 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
              */
             pingRetry: 30 * 1000,
             /**
-             * how long the door has been consecutively open before an alert is sent (for debug purpose, set to 5 min)
+             * how long the door has been consecutively open before an alert is sent
              */
-            maxOpenTimeAllowed: 5 * 60 * 1000,
+            maxOpenTimeAllowed: 30 * 60 * 1000,
             alertEmailInterval: 60 * 60 * 1000, // 1 hour
         },
         /**
@@ -232,7 +225,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
      * @param id the device which is alive
      */
     function assertAlive(id) {
-        debug('[Alive]', id);
+        showDebugMsg('[Alive]', id);
         const channel = channels[id];
         //remove any pending timeout
         clearTimeout(channel.currentTimer);
@@ -241,7 +234,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
             channel.prevState = LiveState.ALIVE;
             //protect from stack explosion by running in next tick
             setTimeout(() => {
-                debug('[Notifying alive]', id);
+                showDebugMsg('[Notifying alive]', id);
                 for (const listener of channel.aliveListeners)
                     listener();
             });
@@ -261,7 +254,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
      */
     function pingTest(id) {
         const channel = channels[id];
-        debug('Pinging', id, '...');
+        showDebugMsg('Pinging', id, '...');
         grage.requestPing(id);
         //if device does respond, assertAlive will get called,
         //canceling the death timer
@@ -275,7 +268,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
      * @param id the device known to be dead
      */
     function assertDead(id) {
-        debug('[Dead]', id);
+        showDebugMsg('[Dead]', id);
         const channel = channels[id];
         //remove any pending timeout
         clearTimeout(channel.currentTimer);
@@ -284,7 +277,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
             channel.prevState = LiveState.DEAD;
             //protect from stack explosion by running in next tick
             setTimeout(() => {
-                debug('[Notifying dead]', id);
+                showDebugMsg('[Notifying dead]', id);
                 for (const listener of channel.deadListeners)
                     listener();
             });
@@ -296,7 +289,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
     ws.onmessage = evt => {
         try {
             const m = JSON.parse(evt.data);
-            debug('[recv]', m);
+            showDebugMsg('[recv]', m);
             //ignore messages from other browsers, ignore non subscribed messages
             if (isChannelMessage(m) && m.fromDevice && channels.hasOwnProperty(m.id)) { ////data || ping || rping
                 //since this device just sent a message,
@@ -318,10 +311,10 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
             }
             else if (isMetadataMessage(m)) { //metadata msg //added by John
                 //connect(m.id);
-                debug('no handler for metadata yet');
+                showDebugMsg('no handler for metadata yet');
             }
             else {
-                console.warn('[Unknown message type]', m);
+                console.warn('[Unknown message type or msg not from device-type]', m);
             }
         }
         catch (error) {
@@ -329,7 +322,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
         }
     };
     ws.onopen = function handleOpen() {
-        debug('[Websocket open]');
+        showDebugMsg('[Websocket open]');
         //call every listener upon connect
         if (openListeners !== undefined)
             for (const handler of openListeners)
@@ -339,7 +332,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
     function handleError(error) {
         console.error('[Websocket error]', error);
         //if debug, stop, else try reload page
-        if (!grage.options.debug)
+        if (!(process.env.DEBUG === 'true'))
             grage.terminate(error);
         else {
             console.log('[Debug mode] frozen');
