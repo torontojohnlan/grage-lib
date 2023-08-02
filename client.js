@@ -1,12 +1,6 @@
 import { isMetadataMessage } from "./lib.js";
-import { w3cwebsocket } from 'websocket/index.js';
-/* console.logs the parameters if debug mode is on
- * @param args the parameters to console.log
-*/
-export function showDebugMsg(...args) {
-    if ((process.env.DEBUG === 'true'))
-        console.log(...args);
-}
+import * as pkg from 'websocket';
+// const { w3cwebsocket } = pkg;
 function isRequestPing(m) {
     return m.type === 'rping';
 }
@@ -25,8 +19,15 @@ var LiveState;
     LiveState[LiveState["DEAD"] = 1] = "DEAD";
     LiveState[LiveState["UNKNOWN"] = 2] = "UNKNOWN";
 })(LiveState || (LiveState = {}));
-// @ts-ignore
-export default function makeClient(host = undefined, onTerminate = undefined) {
+/* console.logs the parameters if debug mode is on
+ * @param args the parameters to console.log
+*/
+export function showDebugMsg(...args) {
+    if ((process.env.DEBUG === 'true'))
+        console.log(...args);
+}
+;
+export function makeClient(host, onTerminate) {
     let protocol = 'wss';
     if (globalThis.location) {
         if (location.protocol !== 'https:')
@@ -34,7 +35,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
         host !== null && host !== void 0 ? host : (host = `${location.hostname}:${location.port}`);
     }
     showDebugMsg(`${protocol}://${host}/ws`);
-    const ws = new w3cwebsocket(`${protocol}://${host}/ws`);
+    const ws = new pkg.w3cwebsocket(`${protocol}://${host}/ws`);
     //list of listeners for when the websocket connects
     let openListeners = [];
     const channels = {};
@@ -124,7 +125,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
         terminate(reason = undefined) {
             //close ws if not already
             console.log("grage channel closing handler");
-            if (ws.readyState === w3cwebsocket.OPEN || ws.readyState === w3cwebsocket.CONNECTING) {
+            if (ws.readyState === pkg.w3cwebsocket.OPEN || ws.readyState === pkg.w3cwebsocket.CONNECTING) {
                 ws.close();
             }
             // User error handler

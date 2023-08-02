@@ -7,15 +7,8 @@ import {
     RequestPing
 } from "./lib.js";
 
-import { w3cwebsocket } from 'websocket/index.js'
-
-/* console.logs the parameters if debug mode is on
- * @param args the parameters to console.log
-*/
-export function showDebugMsg(...args: any) {
-    if ((process.env.DEBUG as string === 'true'))
-        console.log(...args);
-}
+import * as pkg from 'websocket';
+// const { w3cwebsocket } = pkg;
 
 function isRequestPing(m: Message): m is RequestPing {
     return m.type === 'rping';
@@ -38,7 +31,7 @@ enum LiveState {
 }
 
 type LiveListener = () => void;
-type TerminateListener = (reason:any) => void;
+export type TerminateListener = (reason:any) => void;
 
 type ChannelListener = (data: any) => void;
 type Channel = {
@@ -51,8 +44,15 @@ type Channel = {
     currentTimer?: NodeJS.Timeout;//TODO stop using nodejs classes
 };
 
-// @ts-ignore
-export default function makeClient(host:string = undefined, onTerminate:TerminateListener = undefined) { //returns a grage object
+/* console.logs the parameters if debug mode is on
+ * @param args the parameters to console.log
+*/
+export function showDebugMsg(...args: any) {
+    if ((process.env.DEBUG as string === 'true'))
+        console.log(...args);
+};
+
+export function makeClient(host:string, onTerminate:TerminateListener) { //returns a grage object
     let protocol = 'wss';
 
     if(globalThis.location) {
@@ -62,7 +62,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
         host ??= `${location.hostname}:${location.port}`;
     }
     showDebugMsg(`${protocol}://${host}/ws`);
-    const ws = new w3cwebsocket(`${protocol}://${host}/ws`);
+    const ws = new pkg.w3cwebsocket(`${protocol}://${host}/ws`);
 
     //list of listeners for when the websocket connects
     let openListeners: LiveListener[] | undefined = [];
@@ -162,7 +162,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
         terminate(reason:any = undefined) {
             //close ws if not already
             console.log("grage channel closing handler")
-            if (ws.readyState === w3cwebsocket.OPEN || ws.readyState === w3cwebsocket.CONNECTING) {
+            if (ws.readyState === pkg.w3cwebsocket.OPEN || ws.readyState === pkg.w3cwebsocket.CONNECTING) {
                 ws.close();
             }
 

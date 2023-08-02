@@ -1,10 +1,10 @@
-var PinMode;
+export var PinMode;
 (function (PinMode) {
     PinMode[PinMode["INPUT"] = 0] = "INPUT";
     PinMode[PinMode["INPUT_PULLUP"] = 2] = "INPUT_PULLUP";
     PinMode[PinMode["OUTPUT"] = 1] = "OUTPUT";
 })(PinMode || (PinMode = {}));
-var InterruptMode;
+export var InterruptMode;
 (function (InterruptMode) {
     InterruptMode[InterruptMode["RISING"] = 1] = "RISING";
     InterruptMode[InterruptMode["FALLING"] = 2] = "FALLING";
@@ -12,12 +12,12 @@ var InterruptMode;
     InterruptMode[InterruptMode["ONLOW"] = 4] = "ONLOW";
     InterruptMode[InterruptMode["ONHIGH"] = 5] = "ONHIGH";
 })(InterruptMode || (InterruptMode = {}));
-var LogicLevel;
+export var LogicLevel;
 (function (LogicLevel) {
     LogicLevel[LogicLevel["HIGH"] = 1] = "HIGH";
     LogicLevel[LogicLevel["LOW"] = 0] = "LOW";
 })(LogicLevel || (LogicLevel = {}));
-var Pin;
+export var Pin;
 (function (Pin) {
     Pin[Pin["D0"] = 16] = "D0";
     Pin[Pin["D1"] = 5] = "D1";
@@ -32,35 +32,28 @@ var Pin;
     Pin[Pin["D10"] = 1] = "D10";
     Pin[Pin["_A0"] = 17] = "_A0";
 })(Pin || (Pin = {}));
-// @ts-ignore
-export default {
-    LogicLevel,
-    PinMode,
-    InterruptMode,
-    Pin,
-    pinMode(pin, mode) {
-        return {
-            command: 'pinMode',
-            pin, mode,
-        };
-    },
-    digitalWrite(pin, value) {
-        return {
-            command: 'digitalWrite',
-            pin, value,
-        };
-    },
-    attachInterrupt(pin, mode) {
-        return {
-            command: 'attachInterrupt',
-            pin, mode,
-        };
-    },
-    detachInterrupt(pin) {
-        return {
-            command: 'detachInterrupt',
-            pin
-        };
-    },
-};
+export function pinMode(pin, mode) {
+    return {
+        command: 'pinMode',
+        pin, mode,
+    };
+}
+export function digitalWrite(pin, value) {
+    return {
+        command: 'digitalWrite',
+        pin, value,
+    };
+}
+export function attachInterrupt(pin, mode) {
+    return {
+        command: 'attachInterrupt',
+        pin, mode,
+    };
+}
+export function detachInterrupt(pin) {
+    return {
+        command: 'detachInterrupt',
+        pin
+    };
+}
 //# sourceMappingURL=esp8266.js.map
