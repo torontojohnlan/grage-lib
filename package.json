@@ -5,7 +5,7 @@
   "keywords": [],
   "author": "sunny-lan",
   "license": "ISC",
-  "type": "module",
+  "type": "commonjs",
   "dependencies": {
     "websocket": "^1.0.34"
   },

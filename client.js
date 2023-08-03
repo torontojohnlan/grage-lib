@@ -1,5 +1,8 @@
-import { isMetadataMessage } from "./lib.js";
-import * as pkg from 'websocket';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.makeClient = exports.showDebugMsg = void 0;
+const lib_js_1 = require("./lib.js");
+const websocket_1 = require("websocket");
 // const { w3cwebsocket } = pkg;
 function isRequestPing(m) {
     return m.type === 'rping';
@@ -22,12 +25,13 @@ var LiveState;
 /* console.logs the parameters if debug mode is on
  * @param args the parameters to console.log
 */
-export function showDebugMsg(...args) {
+function showDebugMsg(...args) {
     if ((process.env.DEBUG === 'true'))
         console.log(...args);
 }
+exports.showDebugMsg = showDebugMsg;
 ;
-export function makeClient(host, onTerminate) {
+function makeClient(host, onTerminate) {
     let protocol = 'wss';
     if (globalThis.location) {
         if (location.protocol !== 'https:')
@@ -35,7 +39,8 @@ export function makeClient(host, onTerminate) {
         host !== null && host !== void 0 ? host : (host = `${location.hostname}:${location.port}`);
     }
     showDebugMsg(`${protocol}://${host}/ws`);
-    const ws = new pkg.w3cwebsocket(`${protocol}://${host}/ws`);
+    console.log(websocket_1.w3cwebsocket);
+    const ws = new websocket_1.w3cwebsocket(`${protocol}://${host}/ws`);
     //list of listeners for when the websocket connects
     let openListeners = [];
     const channels = {};
@@ -125,7 +130,7 @@ export function makeClient(host, onTerminate) {
         terminate(reason = undefined) {
             //close ws if not already
             console.log("grage channel closing handler");
-            if (ws.readyState === pkg.w3cwebsocket.OPEN || ws.readyState === pkg.w3cwebsocket.CONNECTING) {
+            if (ws.readyState === websocket_1.w3cwebsocket.OPEN || ws.readyState === websocket_1.w3cwebsocket.CONNECTING) {
                 ws.close();
             }
             // User error handler
@@ -310,7 +315,7 @@ export function makeClient(host, onTerminate) {
                     channel.dataListenersOnce = [];
                 }
             }
-            else if (isMetadataMessage(m)) { //metadata msg //added by John
+            else if ((0, lib_js_1.isMetadataMessage)(m)) { //metadata msg //added by John
                 //connect(m.id);
                 showDebugMsg('no handler for metadata yet');
             }
@@ -346,4 +351,5 @@ export function makeClient(host, onTerminate) {
     ws.onclose = grage.terminate;
     return grage;
 }
+exports.makeClient = makeClient;
 //# sourceMappingURL=client.js.map

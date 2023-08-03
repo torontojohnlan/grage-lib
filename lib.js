@@ -1,22 +1,32 @@
-export function isErrorMessage(m) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isPingMessage = exports.isRequestPing = exports.isDataMessage = exports.isChannelMessage = exports.isConnectMessage = exports.isMetadataMessage = exports.isErrorMessage = void 0;
+function isErrorMessage(m) {
     return m.type === 'error';
 }
-export function isMetadataMessage(m) {
+exports.isErrorMessage = isErrorMessage;
+function isMetadataMessage(m) {
     return m.type === 'metadata';
 }
-export function isConnectMessage(m) {
+exports.isMetadataMessage = isMetadataMessage;
+function isConnectMessage(m) {
     return m.type === 'connect';
 }
-export function isChannelMessage(m) {
+exports.isConnectMessage = isConnectMessage;
+function isChannelMessage(m) {
     return isDataMessage(m) || isRequestPing(m) || isPingMessage(m);
 }
-export function isDataMessage(m) {
+exports.isChannelMessage = isChannelMessage;
+function isDataMessage(m) {
     return m.type === 'data';
 }
-export function isRequestPing(m) {
+exports.isDataMessage = isDataMessage;
+function isRequestPing(m) {
     return m.type === 'rping';
 }
-export function isPingMessage(m) {
+exports.isRequestPing = isRequestPing;
+function isPingMessage(m) {
     return m.type === 'ping';
 }
+exports.isPingMessage = isPingMessage;
 //# sourceMappingURL=lib.js.map

@@ -7,7 +7,8 @@ import {
     RequestPing
 } from "./lib.js";
 
-import * as pkg from 'websocket';
+
+import {w3cwebsocket} from 'websocket';
 // const { w3cwebsocket } = pkg;
 
 function isRequestPing(m: Message): m is RequestPing {
@@ -62,7 +63,8 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
         host ??= `${location.hostname}:${location.port}`;
     }
     showDebugMsg(`${protocol}://${host}/ws`);
-    const ws = new pkg.w3cwebsocket(`${protocol}://${host}/ws`);
+    console.log(w3cwebsocket);
+    const ws = new w3cwebsocket(`${protocol}://${host}/ws`);
 
     //list of listeners for when the websocket connects
     let openListeners: LiveListener[] | undefined = [];
@@ -162,7 +164,7 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
         terminate(reason:any = undefined) {
             //close ws if not already
             console.log("grage channel closing handler")
-            if (ws.readyState === pkg.w3cwebsocket.OPEN || ws.readyState === pkg.w3cwebsocket.CONNECTING) {
+            if (ws.readyState === w3cwebsocket.OPEN || ws.readyState === w3cwebsocket.CONNECTING) {
                 ws.close();
             }
 
