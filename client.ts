@@ -65,6 +65,7 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
     showDebugMsg(`${protocol}://${host}/ws`);
     console.log(w3cwebsocket);
     const ws = new w3cwebsocket(`${protocol}://${host}/ws`);
+    
 
     //list of listeners for when the websocket connects
     let openListeners: LiveListener[] | undefined = [];
@@ -99,7 +100,7 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
             /**
              * how long to wait before actively checking if a device is alive //JohnLan. To be exact, this is to check if a channel, rather than a device, is alive
              */
-            aliveTimeout: 10 * 1000,
+            aliveTimeout: 30 * 1000,
 
             /**
              * how long to wait for a device to respond to a ping request
@@ -184,7 +185,11 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
             else
             {
                 console.log('terminated websocket')
-                globalThis.process.exit(-1)
+                // globalThis.process.exit(-1) //instead of exit process I want to create a new ws //john lan
+				setTimeout(function() {  
+                console.log("respawn websocket")
+                const ws = new w3cwebsocket(`${protocol}://${host}/ws`);
+              }, 1000);
             }
         },
         /**
@@ -225,10 +230,13 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
                 };
                 if (wsSend(m)) return;
             }
+            channels[id].dataListeners.push(cb);
 
             //request new data
-            grage.requestPing(id);
-            channels[id].dataListeners.push(cb);
+            //grage.requestPing(id); //sunny's original line. Replace it with Pingtest()
+                                     // because even with the initial connect(), assertDead should be called when no response.
+            pingTest(id);
+            // only when a device is asserted dead, grage will keep trying to connect. With original "requestPing" call, this re-attempt doesn't happen
         },
         /**
          * Listens to a single message from a channel
