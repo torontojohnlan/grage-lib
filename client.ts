@@ -99,8 +99,10 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
 
             /**
              * how long to wait before actively checking if a device is alive //JohnLan. To be exact, this is to check if a channel, rather than a device, is alive
+             * This value cannot be too large as if checkAlive(which calls ping in turn) is called in frequent enough interval
+             * websocket will be dropped
              */
-            aliveTimeout: 30 * 1000,
+            aliveTimeout: 10 * 1000,
 
             /**
              * how long to wait for a device to respond to a ping request
@@ -166,6 +168,7 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
             //close ws if not already
             console.log("grage channel closing handler")
             if (ws.readyState === w3cwebsocket.OPEN || ws.readyState === w3cwebsocket.CONNECTING) {
+                console.log("closing websocket")
                 ws.close();
             }
 
@@ -184,12 +187,9 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
             }
             else
             {
-                console.log('terminated websocket')
-                // globalThis.process.exit(-1) //instead of exit process I want to create a new ws //john lan
-				setTimeout(function() {  
-                console.log("respawn websocket")
-                const ws = new w3cwebsocket(`${protocol}://${host}/ws`);
-              }, 1000);
+                console.log('terminated process')
+                globalThis.process.exit(-1) 
+
             }
         },
         /**
