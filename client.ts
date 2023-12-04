@@ -318,11 +318,11 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
     function pingTest(id: string) {
         const channel = channels[id];
 
-        showDebugMsg('Pinging', id, '...');
+        showDebugMsg('Pinging from pingTest', id, '...');
         grage.requestPing(id);
 
-        //if device does respond, assertAlive will get called,
-        //canceling the death timer
+        //if device does respond, assertAlive will get called - in onMessage code block -canceling the death timer
+        // pingTest and assertDead calls each other after certain timeout, this way the program keeps trying to connect after losing connection
         channel.currentTimer = setTimeout(function dead() {
             //otherwise no response, its dead.
             assertDead(id);
@@ -334,22 +334,30 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
      * @param id the device known to be dead
      */
     function assertDead(id: string) {
-        showDebugMsg('[Dead]', id);
+        showDebugMsg('[assertDead]', id);
         const channel = channels[id];
 
         //remove any pending timeout
         clearTimeout(channel.currentTimer);
 
-        //channel just became dead
-        if (channel.prevState !== LiveState.DEAD) {
-            channel.prevState = LiveState.DEAD;
-            //protect from stack explosion by running in next tick
-            setTimeout(() => {
+        // //channel just became dead
+        // if (channel.prevState !== LiveState.DEAD) {
+        //     channel.prevState = LiveState.DEAD;
+        //     //protect from stack explosion by running in next tick
+        //     setTimeout(() => {
+        //         showDebugMsg('[Notifying dead]', id);
+        //         for (const listener of channel.deadListeners)
+        //             listener();
+        //     });
+        // }
+
+        // Changed from above commented out block. In Sunny's code it calls death handler only once at first time 
+        // the device becomes dead. I want the death handler to be called every time.
+            setTimeout(() => { //why can't I call handler right away but need to use a timer to call?
                 showDebugMsg('[Notifying dead]', id);
                 for (const listener of channel.deadListeners)
                     listener();
             });
-        }
 
         channel.state = LiveState.DEAD;
 
