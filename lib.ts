@@ -1,3 +1,4 @@
+// server side library
 export interface Message {
     type: 'error' | 'metadata' | 'connect' | 'data' | 'receive' | 'rping' | 'ping';
 }

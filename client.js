@@ -1,3 +1,4 @@
+import { isMetadataMessage } from "./lib.js";
 //import {w3cwebsocket} from 'websocket'; // browser runtime don't support websocket. Must use native WebSocket
 function isRequestPing(m) {
     return m.type === 'rping';
@@ -25,7 +26,17 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
             protocol = 'ws';
         host ?? (host = `${location.hostname}:${location.port}`);
     }
-    const ws = new WebSocket(`${protocol}://${host}`);
+    /**
+ * console.logs the parameters if debug mode is on
+ * @param args the parameters to console.log
+ */
+    function debug(...args) {
+        if (globalThis.location && (location.hostname === "localhost" || location.hostname === "127.0.0.1"))
+            console.log(...args);
+    }
+    const ws = new WebSocket(`${protocol}://${host}/ws`);
+    //don't forget the ending /ws in url because that where ws.ts is listening on. By default, ws listens on /
+    debug('Created to socket object', `${protocol}://${host}`);
     //list of listeners for when the websocket connects
     let openListeners = [];
     const channels = {};
@@ -43,14 +54,6 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
             handleError(error);
             return error;
         }
-    }
-    /**
-     * console.logs the parameters if debug mode is on
-     * @param args the parameters to console.log
-     */
-    function debug(...args) {
-        if (grage.options.debug)
-            console.log(...args);
     }
     const grage = {
         options: {
@@ -173,6 +176,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
                     type: "connect",
                     id,
                 };
+                debug("sending connect request to server, id", id);
                 if (wsSend(m))
                     return;
             }
@@ -305,6 +309,9 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
                     //then clear list of once listeners
                     channel.dataListenersOnce = [];
                 }
+            }
+            else if (isMetadataMessage(m)) {
+                debug('[Metadata] Ignore');
             }
             else {
                 console.warn('[Unknown message type]', m);

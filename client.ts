@@ -2,9 +2,10 @@ import {
     ChannelMessage,
     ConnectMessage,
     DataMessage,
+    isMetadataMessage,
     Message, Ping,
     RequestPing
-} from "./lib";
+} from "./lib.js";
 
 //import {w3cwebsocket} from 'websocket'; // browser runtime don't support websocket. Must use native WebSocket
 
@@ -50,11 +51,24 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
         if (location.protocol !== 'https:')
             protocol = 'ws';
 
-        host ??= `${location.hostname}:${location.port}`;
+        host ??= `${location.hostname}:${location.port}`; 
     }
 
-    const ws = new WebSocket(`${protocol}://${host}`);
+        /**
+     * console.logs the parameters if debug mode is on
+     * @param args the parameters to console.log
+     */
+        function debug(...args: any) {
+            if (globalThis.location && (location.hostname === "localhost" || location.hostname === "127.0.0.1"))
+                console.log(...args);
+        }
+    
+    
+    const ws = new WebSocket(`${protocol}://${host}/ws`);
+    //don't forget the ending /ws in url because that where ws.ts is listening on. By default, ws listens on /
 
+    debug('Created to socket object',`${protocol}://${host}`);
+    
     //list of listeners for when the websocket connects
     let openListeners: LiveListener[] | undefined = [];
 
@@ -75,15 +89,6 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
             handleError(error as Error);
             return error;
         }
-    }
-
-    /**
-     * console.logs the parameters if debug mode is on
-     * @param args the parameters to console.log
-     */
-    function debug(...args: any) {
-        if (grage.options.debug)
-            console.log(...args);
     }
 
     const grage = {
@@ -131,6 +136,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
         getAppID() {
             const url = window.location.pathname.slice(1);
             const tokens = url.split('/');
+            debug(`client.ts, getAppID, URL is ${url}, tokens are ${tokens}`);
             if (tokens[0] !== 'apps')
                 throw new Error('Cannot get data: invalid app');
             return tokens[1];
@@ -219,6 +225,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
                     type: "connect",
                     id,
                 };
+                debug("sending connect request to server, id", id);
                 if (wsSend(m)) return;
             }
 
@@ -371,7 +378,10 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
                     //then clear list of once listeners
                     channel.dataListenersOnce = [];
                 }
-            } else {
+            } else if (isMetadataMessage(m)) {
+                debug('[Metadata] Ignore');
+            }
+            else {
                 console.warn('[Unknown message type]', m);
             }
         } catch (error) {
