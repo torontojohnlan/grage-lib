@@ -1,17 +1,4 @@
-import { isMetadataMessage } from "./lib.js";
-//import {w3cwebsocket} from 'websocket'; // browser runtime don't support websocket. Must use native WebSocket
-function isRequestPing(m) {
-    return m.type === 'rping';
-}
-function isPingMessage(m) {
-    return m.type === 'ping';
-}
-function isChannelMessage(m) {
-    return isDataMessage(m) || isRequestPing(m) || isPingMessage(m);
-}
-function isDataMessage(m) {
-    return m.type === 'data';
-}
+import { isChannelMessage, isDataMessage, isMetadataMessage } from "./lib.js";
 var LiveState;
 (function (LiveState) {
     LiveState[LiveState["ALIVE"] = 0] = "ALIVE";
@@ -96,6 +83,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
         getAppID() {
             const url = window.location.pathname.slice(1);
             const tokens = url.split('/');
+            debug(`client.ts, getAppID, URL is ${url}, tokens are ${tokens}`);
             if (tokens[0] !== 'apps')
                 throw new Error('Cannot get data: invalid app');
             return tokens[1];
@@ -182,7 +170,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
             }
             //request new data
             grage.requestPing(id);
-            channels[id].dataListeners.push(cb);
+            channels[id].dataListeners.push(cb); //gets a dataListener from app.ts line 52 grage.onOpen.connect
         },
         /**
          * Listens to a single message from a channel
@@ -290,7 +278,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
     ws.onmessage = evt => {
         try {
             const m = JSON.parse(evt.data);
-            debug('[recv]', m);
+            debug('[ws.onmessage, recv]', m);
             //ignore messages from other browsers, ignore non subscribed messages
             if (isChannelMessage(m) && m.fromDevice && channels.hasOwnProperty(m.id)) {
                 //since this device just sent a message,
@@ -300,10 +288,16 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
                 if (isDataMessage(m)) {
                     //send to every listener in the proper channel
                     for (const listener of channel.dataListeners) {
+                        debug('client.ts.onMessage, calling datalisteners, tranfers m.data to listener');
+                        debug('client.ts.onMessage,value transferred', m.data);
+                        debug("client.ts.onMessage,  listener", listener.name);
                         listener(m.data);
                     }
                     //send to every once listener
                     for (const listener of channel.dataListenersOnce) {
+                        debug('client.ts.onMessage, calling once type datalistener, tranfers m.data to listener');
+                        debug('client.ts.onMessage,', m.data);
+                        debug("client.ts.onMessage, once listener", listener.name);
                         listener(m.data);
                     }
                     //then clear list of once listeners
@@ -318,6 +312,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
             }
         }
         catch (error) {
+            debug('client.ws.onmessage err');
             return handleError(error);
         }
     };
@@ -340,6 +335,7 @@ export default function makeClient(host = undefined, onTerminate = undefined) {
         }
     }
     ws.onerror = (ev) => {
+        debug('client.ts.ws.onerror');
         handleError(ev);
     };
     ws.onclose = grage.terminate;

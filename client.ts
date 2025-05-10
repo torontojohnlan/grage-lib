@@ -1,29 +1,8 @@
-import {
-    ChannelMessage,
-    ConnectMessage,
-    DataMessage,
-    isMetadataMessage,
-    Message, Ping,
-    RequestPing
-} from "./lib.js";
 
-//import {w3cwebsocket} from 'websocket'; // browser runtime don't support websocket. Must use native WebSocket
 
-function isRequestPing(m: Message): m is RequestPing {
-    return m.type === 'rping';
-}
+import {ConnectMessage, DataMessage, isChannelMessage, isDataMessage, isMetadataMessage, Message} from "./lib.js";
+import {RequestPing} from "./lib.js";
 
-function isPingMessage(m: Message): m is Ping {
-    return m.type === 'ping';
-}
-
-function isChannelMessage(m: Message): m is ChannelMessage {
-    return isDataMessage(m) || isRequestPing(m) || isPingMessage(m);
-}
-
-function isDataMessage(m: Message): m is DataMessage {
-    return m.type === 'data';
-}
 
 enum LiveState {
     ALIVE, DEAD, UNKNOWN
@@ -231,7 +210,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
 
             //request new data
             grage.requestPing(id);
-            channels[id].dataListeners.push(cb);
+            channels[id].dataListeners.push(cb);  //gets a dataListener from app.ts line 52 grage.onOpen.connect
         },
         /**
          * Listens to a single message from a channel
@@ -355,7 +334,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
     ws.onmessage = evt => {
         try {
             const m = JSON.parse(evt.data as string) as Message;
-            debug('[recv]', m);
+            debug('[ws.onmessage, recv]', m);
             //ignore messages from other browsers, ignore non subscribed messages
             if (isChannelMessage(m) && m.fromDevice && channels.hasOwnProperty(m.id)) {
                 //since this device just sent a message,
@@ -367,11 +346,17 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
                 if (isDataMessage(m)) {
                     //send to every listener in the proper channel
                     for (const listener of channel.dataListeners) {
+                        debug('client.ts.onMessage, calling datalisteners, tranfers m.data to listener')
+                        debug('client.ts.onMessage,value transferred',m.data)
+                        debug("client.ts.onMessage,  listener", listener.name);
                         listener(m.data);
                     }
 
                     //send to every once listener
                     for (const listener of channel.dataListenersOnce) {
+                        debug('client.ts.onMessage, calling once type datalistener, tranfers m.data to listener')
+                        debug('client.ts.onMessage,',m.data)
+                        debug("client.ts.onMessage, once listener", listener.name);
                         listener(m.data);
                     }
 
@@ -385,6 +370,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
                 console.warn('[Unknown message type]', m);
             }
         } catch (error) {
+            debug('client.ws.onmessage err')
             return handleError(error as Error);
         }
     };
@@ -410,7 +396,7 @@ export default function makeClient(host:string = undefined, onTerminate:Terminat
     }
 
     ws.onerror = (ev) => {
-
+        debug('client.ts.ws.onerror');
         handleError(ev as any as Error);
     };
 
