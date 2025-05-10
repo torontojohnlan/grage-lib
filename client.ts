@@ -1,15 +1,12 @@
 import {
     ChannelMessage,
     ConnectMessage,
-    isMetadataMessage,
     DataMessage,
     Message, Ping,
     RequestPing
-} from "./lib.js";
+} from "./lib";
 
-
-import {w3cwebsocket} from 'websocket';
-// const { w3cwebsocket } = pkg;
+//import {w3cwebsocket} from 'websocket'; // browser runtime don't support websocket. Must use native WebSocket
 
 function isRequestPing(m: Message): m is RequestPing {
     return m.type === 'rping';
@@ -32,7 +29,7 @@ enum LiveState {
 }
 
 type LiveListener = () => void;
-export type TerminateListener = (reason:any) => void;
+type TerminateListener = (reason:any) => void;
 
 type ChannelListener = (data: any) => void;
 type Channel = {
@@ -45,15 +42,8 @@ type Channel = {
     currentTimer?: NodeJS.Timeout;//TODO stop using nodejs classes
 };
 
-/* console.logs the parameters if debug mode is on
- * @param args the parameters to console.log
-*/
-export function showDebugMsg(...args: any) {
-    if ((process.env.DEBUG as string === 'true'))
-        console.log(...args);
-};
-
-export function makeClient(host:string, onTerminate:TerminateListener) { //returns a grage object
+// @ts-ignore
+export default function makeClient(host:string = undefined, onTerminate:TerminateListener = undefined) {
     let protocol = 'wss';
 
     if(globalThis.location) {
@@ -62,10 +52,8 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
 
         host ??= `${location.hostname}:${location.port}`;
     }
-    showDebugMsg(`${protocol}://${host}/ws`);
-    console.log(w3cwebsocket);
-    const ws = new w3cwebsocket(`${protocol}://${host}/ws`);
-    
+
+    const ws = new WebSocket(`${protocol}://${host}`);
 
     //list of listeners for when the websocket connects
     let openListeners: LiveListener[] | undefined = [];
@@ -80,17 +68,31 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
      */
     function wsSend(m: Message) {
         try {
-            showDebugMsg('[Send]', m);
+            debug('[Send]', m);
             ws.send(JSON.stringify(m));
             return false;
         } catch (error) {
-            handleError(error);
+            handleError(error as Error);
             return error;
         }
     }
 
-    const  grage = {
+    /**
+     * console.logs the parameters if debug mode is on
+     * @param args the parameters to console.log
+     */
+    function debug(...args: any) {
+        if (grage.options.debug)
+            console.log(...args);
+    }
+
+    const grage = {
         options: {
+            /**
+             * shows debug messages if set to true
+             */
+            debug: globalThis.location && (location.hostname === "localhost" || location.hostname === "127.0.0.1"),
+
             /**
              * how long to wait before reloading the page
              * this prevents exploding if errors occur at page load time
@@ -98,9 +100,7 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
             reloadTime: 5 * 1000,
 
             /**
-             * how long to wait before actively checking if a device is alive //JohnLan. To be exact, this is to check if a channel, rather than a device, is alive
-             * This value cannot be too large as if checkAlive(which calls ping in turn) is called in frequent enough interval
-             * websocket will be dropped
+             * how long to wait before actively checking if a device is alive
              */
             aliveTimeout: 10 * 1000,
 
@@ -114,12 +114,6 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
              * how long to wait before retrying another ping request
              */
             pingRetry: 30 * 1000,
-
-            /**
-             * how long the door has been consecutively open before an alert is sent 
-             */
-            maxOpenTimeAllowed: 30 * 60 * 1000,  // 1 hr,
-            alertEmailInterval: 60 * 60 * 1000, // 1 hour
         },
         /**
          * Registers a listener which is called upon connection to server
@@ -166,9 +160,7 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
          */
         terminate(reason:any = undefined) {
             //close ws if not already
-            console.log("grage channel closing handler")
-            if (ws.readyState === w3cwebsocket.OPEN || ws.readyState === w3cwebsocket.CONNECTING) {
-                console.log("closing websocket")
+            if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
                 ws.close();
             }
 
@@ -187,9 +179,8 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
             }
             else
             {
-                console.log('terminated process')
-                globalThis.process.exit(-1) 
-
+                console.log('terminated websocket')
+                globalThis.process.exit(-1)
             }
         },
         /**
@@ -230,13 +221,10 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
                 };
                 if (wsSend(m)) return;
             }
-            channels[id].dataListeners.push(cb);
 
             //request new data
-            //grage.requestPing(id); //sunny's original line. Replace it with Pingtest()
-                                     // because even with the initial connect(), assertDead should be called when no response.
-            pingTest(id);
-            // only when a device is asserted dead, grage will keep trying to connect. With original "requestPing" call, this re-attempt doesn't happen
+            grage.requestPing(id);
+            channels[id].dataListeners.push(cb);
         },
         /**
          * Listens to a single message from a channel
@@ -282,7 +270,7 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
      * @param id the device which is alive
      */
     function assertAlive(id: string) {
-        showDebugMsg('[Alive]', id);
+        debug('[Alive]', id);
         const channel = channels[id];
 
         //remove any pending timeout
@@ -293,7 +281,7 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
             channel.prevState = LiveState.ALIVE;
             //protect from stack explosion by running in next tick
             setTimeout(() => {
-                showDebugMsg('[Notifying alive]', id);
+                debug('[Notifying alive]', id);
                 for (const listener of channel.aliveListeners)
                     listener();
             });
@@ -318,11 +306,11 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
     function pingTest(id: string) {
         const channel = channels[id];
 
-        showDebugMsg('Pinging from pingTest', id, '...');
+        debug('Pinging', id, '...');
         grage.requestPing(id);
 
-        //if device does respond, assertAlive will get called - in onMessage code block -canceling the death timer
-        // pingTest and assertDead calls each other after certain timeout, this way the program keeps trying to connect after losing connection
+        //if device does respond, assertAlive will get called,
+        //canceling the death timer
         channel.currentTimer = setTimeout(function dead() {
             //otherwise no response, its dead.
             assertDead(id);
@@ -334,30 +322,22 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
      * @param id the device known to be dead
      */
     function assertDead(id: string) {
-        showDebugMsg('[assertDead]', id);
+        debug('[Dead]', id);
         const channel = channels[id];
 
         //remove any pending timeout
         clearTimeout(channel.currentTimer);
 
-        // //channel just became dead
-        // if (channel.prevState !== LiveState.DEAD) {
-        //     channel.prevState = LiveState.DEAD;
-        //     //protect from stack explosion by running in next tick
-        //     setTimeout(() => {
-        //         showDebugMsg('[Notifying dead]', id);
-        //         for (const listener of channel.deadListeners)
-        //             listener();
-        //     });
-        // }
-
-        // Changed from above commented out block. In Sunny's code it calls death handler only once at first time 
-        // the device becomes dead. I want the death handler to be called every time.
-            setTimeout(() => { //why can't I call handler right away but need to use a timer to call?
-                showDebugMsg('[Notifying dead]', id);
+        //channel just became dead
+        if (channel.prevState !== LiveState.DEAD) {
+            channel.prevState = LiveState.DEAD;
+            //protect from stack explosion by running in next tick
+            setTimeout(() => {
+                debug('[Notifying dead]', id);
                 for (const listener of channel.deadListeners)
                     listener();
             });
+        }
 
         channel.state = LiveState.DEAD;
 
@@ -368,16 +348,16 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
     ws.onmessage = evt => {
         try {
             const m = JSON.parse(evt.data as string) as Message;
-            showDebugMsg('[recv]', m);
+            debug('[recv]', m);
             //ignore messages from other browsers, ignore non subscribed messages
-            if (isChannelMessage(m) && m.fromDevice && channels.hasOwnProperty(m.id)) { ////data || ping || rping
+            if (isChannelMessage(m) && m.fromDevice && channels.hasOwnProperty(m.id)) {
                 //since this device just sent a message,
                 //it must be alive
                 assertAlive(m.id);
 
                 const channel = channels[m.id];
 
-                if (isDataMessage(m)) { //data 
+                if (isDataMessage(m)) {
                     //send to every listener in the proper channel
                     for (const listener of channel.dataListeners) {
                         listener(m.data);
@@ -391,19 +371,16 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
                     //then clear list of once listeners
                     channel.dataListenersOnce = [];
                 }
-            } else if (isMetadataMessage(m)) { //metadata msg //added by John
-                //connect(m.id);
-                showDebugMsg('no handler for metadata yet')
-            }else {
-                console.warn('[Unknown message type or msg not from device-type]', m);
+            } else {
+                console.warn('[Unknown message type]', m);
             }
         } catch (error) {
-            return handleError(error);
+            return handleError(error as Error);
         }
     };
 
     ws.onopen = function handleOpen() {
-        showDebugMsg('[Websocket open]');
+        debug('[Websocket open]');
         //call every listener upon connect
         if (openListeners !== undefined)
             for (const handler of openListeners)
@@ -414,7 +391,7 @@ export function makeClient(host:string, onTerminate:TerminateListener) { //retur
     function handleError(error: Error) {
         console.error('[Websocket error]', error);
         //if debug, stop, else try reload page
-        if (!(process.env.DEBUG as string === 'true'))
+        if (!grage.options.debug)
             grage.terminate(error);
         else {
             console.log('[Debug mode] frozen');

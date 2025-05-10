@@ -1,7 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 // @ts-ignore
-exports.default = {
+export default {
     timeDifference(current, previous) {
         const msPerMinute = 60 * 1000;
         const msPerHour = msPerMinute * 60;
@@ -30,4 +28,3 @@ exports.default = {
         }
     }
 };
-//# sourceMappingURL=util.js.map

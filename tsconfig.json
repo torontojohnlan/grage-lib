@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
-    "target": "es2017",
-    "sourceMap": true,
-    "inlineSources": true,
-    "lib": [ "dom","es2017"],
+    "target": "ES2020",
+    "module": "ESNext",
     "moduleResolution": "node",
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    
-    "module": "commonjs"
-  }
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "rootDir": "."
+  },
+  "include": ["*.ts"]
 }
