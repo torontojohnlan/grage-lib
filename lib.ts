@@ -38,6 +38,7 @@ export interface ChannelMessage extends Message {
     type: 'data' | 'rping' | 'ping';
     id: string;
     fromDevice: boolean;
+    // token: string; // used to hold Entra access token of message sender
 }
 
 export function isChannelMessage(m: Message): m is ChannelMessage {

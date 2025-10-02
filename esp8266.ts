@@ -49,10 +49,12 @@ export default {
             pin, mode,
         }
     },
-    digitalWrite(pin: Pin, value: LogicLevel) {
+    digitalWrite(pin: Pin, value: LogicLevel,token: string) {
         return {
             command: 'digitalWrite',
-            pin, value,
+            pin, 
+            value,
+            token
         };
     },
     attachInterrupt(pin: Pin, mode: InterruptMode) {

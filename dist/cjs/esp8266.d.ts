@@ -41,10 +41,11 @@ declare const _default: {
         pin: Pin;
         mode: PinMode;
     };
-    digitalWrite(pin: Pin, value: LogicLevel): {
+    digitalWrite(pin: Pin, value: LogicLevel, token: string): {
         command: string;
         pin: Pin;
         value: LogicLevel;
+        token: string;
     };
     attachInterrupt(pin: Pin, mode: InterruptMode): {
         command: string;

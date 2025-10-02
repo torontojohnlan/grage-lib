@@ -2,9 +2,16 @@
   "name": "grage-lib-jl",
   "version": "1.2.12",
   "description": "",
-  "type": "module",
   "keywords": [],
   "author": "sunny-lan",
+    "main": "./dist/cjs/lib.js",
+  "module": "./dist/esm/lib.js",
+  "exports": {
+    ".": {
+      "require": "./dist/cjs/lib.js",
+      "import": "./dist/esm/lib.js"
+    }
+  },
   "dependencies": {
     "websocket": "^1.0.34"
   },

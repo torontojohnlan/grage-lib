@@ -44,10 +44,12 @@ export default {
             pin, mode,
         };
     },
-    digitalWrite(pin, value) {
+    digitalWrite(pin, value, token) {
         return {
             command: 'digitalWrite',
-            pin, value,
+            pin,
+            value,
+            token
         };
     },
     attachInterrupt(pin, mode) {
