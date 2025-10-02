@@ -4,14 +4,24 @@
   "description": "",
   "keywords": [],
   "author": "sunny-lan",
-  "main": "./dist/cjs/lib.js",
   "module": "./dist/esm/lib.js",
   "exports": {
-    ".": {
+     "./lib": {
       "require": "./dist/cjs/lib.js",
       "import": "./dist/esm/lib.js"
-    }
-  },
+    },
+    "./client": {
+      "require": "./dist/cjs/client.js",
+      "import": "./dist/esm/client.js"
+    },
+    "./util": {
+      "require": "./dist/cjs/util.js",
+      "import": "./dist/esm/util.js"
+    },
+    "./esp8266": {
+      "require": "./dist/cjs/esp8266.js",
+      "import": "./dist/esm/esp8266.js"
+    } },
   "dependencies": {
     "websocket": "^1.0.34"
   },
