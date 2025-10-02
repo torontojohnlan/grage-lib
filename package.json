@@ -1,10 +1,10 @@
 {
   "name": "grage-lib-jl",
-  "version": "1.2.12",
+  "version": "1.2.13",
   "description": "",
   "keywords": [],
   "author": "sunny-lan",
-    "main": "./dist/cjs/lib.js",
+  "main": "./dist/cjs/lib.js",
   "module": "./dist/esm/lib.js",
   "exports": {
     ".": {
